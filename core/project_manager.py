@@ -3,6 +3,12 @@ import os
 import logging
 from typing import Dict, Any
 
+try:
+    import yaml
+    HAS_YAML = True
+except ImportError:
+    HAS_YAML = False
+
 logger = logging.getLogger("BugBot.ProjectManager")
 
 class ProjectManager:
@@ -42,19 +48,79 @@ class ProjectManager:
         logger.info(f"Proyecto {name} creado con éxito.")
 
     def load_project(self, name: str) -> bool:
-        """Carga la configuración de un proyecto específico."""
-        path = os.path.join(self.projects_dir, f"{name}.json")
-        if not os.path.exists(path):
-            logger.error(f"Error: El proyecto {name} no existe.")
+        """Carga la configuración de un proyecto (JSON o YAML)."""
+        # Buscar primero JSON, luego YAML
+        json_path = os.path.join(self.projects_dir, f"{name}.json")
+        yaml_path = os.path.join(self.projects_dir, f"{name}.yaml")
+        yml_path = os.path.join(self.projects_dir, f"{name}.yml")
+
+        if os.path.exists(json_path):
+            path, fmt = json_path, "json"
+        elif os.path.exists(yaml_path):
+            path, fmt = yaml_path, "yaml"
+        elif os.path.exists(yml_path):
+            path, fmt = yml_path, "yaml"
+        else:
+            logger.error(f"Error: El proyecto {name} no existe (.json/.yaml).")
             return False
-            
+
         with open(path, "r", encoding="utf-8") as f:
-            user_config = json.load(f)
-            # Combinar con el template por defecto por seguridad
-            self.current_config = {**self.DEFAULT_TEMPLATE, **user_config}
-            
-        logger.info(f"Proyecto {name} cargado correctamente.")
+            if fmt == "yaml":
+                if not HAS_YAML:
+                    logger.error("PyYAML no instalado. Ejecuta: pip install pyyaml")
+                    return False
+                user_config = yaml.safe_load(f)
+            else:
+                user_config = json.load(f)
+
+        # Aplanar config YAML con secciones anidadas al formato plano esperado
+        flat_config = self._flatten_yaml_config(user_config) if fmt == "yaml" else user_config
+        self.current_config = {**self.DEFAULT_TEMPLATE, **flat_config}
+
+        logger.info(f"Proyecto {name} cargado correctamente ({fmt.upper()}).")
         return True
+
+    @staticmethod
+    def _flatten_yaml_config(cfg: Dict) -> Dict:
+        """Convierte la config YAML anidada al formato plano que espera Config."""
+        flat = {}
+        # Datos básicos
+        for key in ["program_name", "platform", "hackerone_handle"]:
+            if key in cfg:
+                flat[key] = cfg[key]
+
+        # Scope
+        scope = cfg.get("scope", {})
+        flat["target_domains"] = scope.get("target_domains", [])
+        flat["excluded_subdomains"] = scope.get("excluded_subdomains", [])
+        flat["priority_targets"] = scope.get("priority_targets", [])
+        flat["third_party_exclusions"] = scope.get("third_party_exclusions", [])
+
+        # Rate Limiting
+        rate = cfg.get("rate_limiting", {})
+        flat["global_concurrency"] = rate.get("global_concurrency", 5)
+        flat["module_concurrency"] = rate.get("module_concurrency", 2)
+        flat["daily_max_requests"] = rate.get("daily_max_requests", 10000)
+        flat["kill_switch_threshold"] = rate.get("kill_switch_threshold", 9500)
+        flat["per_endpoint_rps"] = rate.get("per_endpoint_rps", 100)
+
+        # Auth y Headers
+        auth = cfg.get("authentication", {})
+        flat["custom_headers"] = auth.get("custom_headers", {})
+        if auth.get("research_header"):
+            rh = auth["research_header"]
+            flat["custom_headers"][rh["name"]] = rh["value"]
+        flat["account_a_token"] = auth.get("account_a_token", {})
+        flat["account_b_token"] = auth.get("account_b_token", {})
+
+        # Keywords
+        flat["interest_keywords"] = cfg.get("interest_keywords", [])
+
+        # Business Rules y Noise Filter (se pasan tal cual)
+        flat["business_rules"] = cfg.get("business_rules", {})
+        flat["noise_filter"] = cfg.get("noise_filter", {})
+
+        return flat
 
     def is_in_scope(self, url: str) -> bool:
         """Valida si una URL o host está dentro del alcance definido."""

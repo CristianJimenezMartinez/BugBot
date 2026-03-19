@@ -2,7 +2,9 @@ aiohttp
 beautifulsoup4
 cryptography
 dnspython
+httpx
 playwright
+pyyaml
 requests
 tldextract
 urllib3

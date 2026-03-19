@@ -1,0 +1,162 @@
+# ============================================================
+#  BugBot v3.5 - Perfil de Programa: Whatnot (HackerOne)
+#  Generado: 2026-03-19
+#  Objetivo: Bug Bounty con cumplimiento estricto de Safe Harbor
+# ============================================================
+
+program_name: "Whatnot_H1"
+platform: "HackerOne"
+hackerone_handle: "whatnot"
+
+# -----------------------------------------------------------
+# 1. SCOPE (Dominios Permitidos y Exclusiones)
+# -----------------------------------------------------------
+scope:
+  # Wildcard principal - Todos los subdominios de whatnot.com
+  primary_wildcard: "*.whatnot.com"
+
+  # APIs críticas (prioridad máxima para fuzzeo lógico)
+  priority_targets:
+    - "api.whatnot.com"
+    - "live-service.whatnot.com"
+    - "auction-service.whatnot.com"
+
+  # Dominios objetivo para OSINT y subdomain enumeration
+  target_domains:
+    - "whatnot.com"
+
+  # Subdominios explícitamente excluidos
+  excluded_subdomains: []
+
+  # Infraestructura de terceros a ignorar proactivamente
+  third_party_exclusions:
+    - "*.amazonaws.com"
+    - "*.cloudfront.net"
+    - "*.cloudflare.com"
+    - "*.stripe.com"
+    - "*.braintree-api.com"
+    - "*.paypal.com"
+    - "*.google.com"
+    - "*.googleapis.com"
+    - "*.gstatic.com"
+    - "*.facebook.com"
+    - "*.fbcdn.net"
+    - "*.twitch.tv"
+    - "*.akamai.net"
+    - "*.fastly.net"
+    - "*.segment.io"
+    - "*.segment.com"
+    - "*.sentry.io"
+    - "*.datadog-agent.com"
+    - "*.datadoghq.com"
+    - "*.launchdarkly.com"
+    - "*.intercom.io"
+    - "*.zendesk.com"
+
+# -----------------------------------------------------------
+# 2. RATE LIMITING (Kill Switch Obligatorio)
+# -----------------------------------------------------------
+rate_limiting:
+  # Límite global absoluto por día
+  daily_max_requests: 10000
+  # Kill switch: detener ejecución al llegar a este umbral
+  kill_switch_threshold: 9500
+
+  # Límite por endpoint único
+  per_endpoint_rps: 100
+
+  # Concurrencia segura
+  global_concurrency: 5
+  module_concurrency: 2
+
+  # Jitter adaptativo (segundos)
+  min_delay: 0.3
+  max_delay: 1.0
+
+# -----------------------------------------------------------
+# 3. AUTENTICACIÓN Y CABECERAS (Identificación H1)
+# -----------------------------------------------------------
+authentication:
+  # Cabecera obligatoria en TODAS las peticiones
+  research_header:
+    name: "X-HackerOne-Research"
+    value: "[INSERTAR_USERNAME_AQUI]"
+
+  # Headers personalizados adicionales
+  custom_headers:
+    X-Bug-Bounty: "True"
+    X-HackerOne-Research: "[INSERTAR_USERNAME_AQUI]"
+
+  # Formato de cuentas de prueba para el programa
+  test_account_format: "[username]+whatnot{number}@wearehackerone.com"
+
+  # Tokens de autenticación (rellenar antes de usar)
+  account_a_token:
+    Authorization: "Bearer YOUR_TOKEN_HERE"
+  account_b_token:
+    Authorization: "Bearer YOUR_TOKEN_HERE"
+
+# -----------------------------------------------------------
+# 4. REGLAS DE NEGOCIO (Livestreams - Safe Payloads)
+# -----------------------------------------------------------
+business_rules:
+  livestream_safe_payload:
+    endpoint_pattern: "live-service"
+    required_fields:
+      title: "Test Stream"
+      category: "#other"
+      start_time: "GENERATE_FUTURE_TIMESTAMP"
+    description: >
+      Al interactuar con endpoints de creación de directos,
+      estos valores DEBEN inyectarse para evitar penalizaciones
+      del programa.
+
+# -----------------------------------------------------------
+# 5. FILTRO DE RUIDO (Out of Scope - Silenciar Alertas)
+# -----------------------------------------------------------
+noise_filter:
+  # Tipos de hallazgos que NO deben generar alertas
+  silenced_categories:
+    - "MISSING_CSP"
+    - "MISSING_HTTPONLY"
+    - "MISSING_SECURE_FLAG"
+    - "SSL_TLS_MISCONFIGURATION"
+    - "MISSING_SPF"
+    - "MISSING_DKIM"
+    - "MISSING_DMARC"
+    - "CLICKJACKING"
+    - "CSRF_NON_SENSITIVE"
+
+  # Patrones de respuesta a ignorar
+  ignored_response_patterns:
+    - "X-Frame-Options"
+    - "Content-Security-Policy"
+    - "Strict-Transport-Security"
+
+# -----------------------------------------------------------
+# 6. KEYWORDS DE INTERÉS PARA RECON
+# -----------------------------------------------------------
+interest_keywords:
+  - "dev"
+  - "staging"
+  - "test"
+  - "qa"
+  - "internal"
+  - "admin"
+  - "api"
+  - "live"
+  - "auction"
+  - "stream"
+  - "payment"
+  - "checkout"
+  - "seller"
+  - "buyer"
+  - "wallet"
+  - "webhook"
+  - "graphql"
+  - "ws"
+  - "socket"
+  - "cdn"
+  - "static"
+  - "beta"
+  - "preprod"

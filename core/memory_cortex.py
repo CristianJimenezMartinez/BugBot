@@ -269,7 +269,7 @@ class MemoryCortex:
 # Ejemplo de uso independiente
 if __name__ == "__main__":
     cortex = MemoryCortex()
-    cortex.record_waf_ban("api.playtika.com")
-    print("Ban activo?", cortex.is_currently_banned("api.playtika.com"))
-    cortex.remember_vulnerable_param("news.playtika.com", "debug", "Information Disclosure")
-    print("Parametros en news:", cortex.get_known_params_for_domain("news.playtika.com"))
+    cortex.record_waf_ban("api.example.com")
+    print("Ban activo?", cortex.is_currently_banned("api.example.com"))
+    cortex.remember_vulnerable_param("news.example.com", "debug", "Information Disclosure")
+    print("Parametros en news:", cortex.get_known_params_for_domain("news.example.com"))

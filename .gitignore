@@ -131,10 +131,13 @@ dmypy.json
 # Project Specific Exclusions
 logs/
 data/
-projects/
 targets/
 Extrae_Codigos/
 robinhood/
+
+# Project profiles: allow YAML configs, block JSON (may contain tokens) and sessions
+projects/*.json
+projects/sesiones*
 *.log
 GLOBAL_HIT_LIST.md
 
